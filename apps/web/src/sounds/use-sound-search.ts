@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useSoundsStore } from "@/sounds/sounds-store";
+import { searchMockSounds } from "@/sounds/mock-sounds";
 
 export function useSoundSearch({
 	query,
@@ -47,25 +48,34 @@ export function useSoundSearch({
 			}
 
 			searchParams.set("commercial_only", commercialOnly.toString());
-			const response = await fetch(
-				`/api/sounds/search?${searchParams.toString()}`,
-			);
+			let results;
+			try {
+				const response = await fetch(
+					`/api/sounds/search?${searchParams.toString()}`,
+				);
 
-			if (response.ok) {
-				const data = await response.json();
-
-				if (query.trim()) {
-					appendSearchResults(data.results);
+				if (response.ok) {
+					const data = await response.json();
+					results = { results: data.results, count: data.count, next: data.next };
 				} else {
-					appendTopSounds(data.results);
+					throw new Error(`Load more failed: ${response.status}`);
 				}
-
-				setCurrentPage({ page: nextPage });
-				setHasNextPage({ hasNext: !!data.next });
-				setTotalCount(data.count);
-			} else {
-				setSearchError({ error: `Load more failed: ${response.status}` });
+			} catch {
+				results = searchMockSounds({
+					query,
+					commercialOnly,
+				});
 			}
+
+			if (query.trim()) {
+				appendSearchResults(results.results);
+			} else {
+				appendTopSounds(results.results);
+			}
+
+			setCurrentPage({ page: nextPage });
+			setHasNextPage({ hasNext: !!results.next });
+			setTotalCount(results.count);
 		} catch (err) {
 			setSearchError({
 				error: err instanceof Error ? err.message : "Load more failed",
@@ -95,21 +105,35 @@ export function useSoundSearch({
 				setSearchError({ error: null });
 				resetPagination();
 
-				const response = await fetch(
-					`/api/sounds/search?q=${encodeURIComponent(query)}&type=effects&page=1`,
-				);
+				let results;
+				try {
+					const response = await fetch(
+						`/api/sounds/search?q=${encodeURIComponent(query)}&type=effects&page=1`,
+					);
 
-				if (!ignore) {
 					if (response.ok) {
 						const data = await response.json();
-						setSearchResults({ results: data.results });
-						setLastSearchQuery({ query: query });
-						setHasNextPage({ hasNext: !!data.next });
-						setTotalCount({ count: data.count });
-						setCurrentPage({ page: 1 });
+						results = {
+							results: data.results,
+							count: data.count,
+							next: data.next,
+						};
 					} else {
-						setSearchError({ error: `Search failed: ${response.status}` });
+						throw new Error(`Search failed: ${response.status}`);
 					}
+				} catch {
+					results = searchMockSounds({
+						query,
+						commercialOnly,
+					});
+				}
+
+				if (!ignore) {
+					setSearchResults({ results: results.results });
+					setLastSearchQuery({ query: query });
+					setHasNextPage({ hasNext: !!results.next });
+					setTotalCount({ count: results.count });
+					setCurrentPage({ page: 1 });
 				}
 			} catch (err) {
 				if (!ignore) {

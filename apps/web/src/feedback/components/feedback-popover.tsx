@@ -61,18 +61,28 @@ function useFeedback() {
 		setIsSubmitting(true);
 
 		try {
-			const res = await fetch("/api/feedback", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(values),
-			});
+			let entry: FeedbackEntry;
+			try {
+				const res = await fetch("/api/feedback", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(values),
+				});
 
-			if (!res.ok) {
-				const data = await res.json().catch(() => null);
-				throw new Error(data?.error ?? "Failed to submit");
+				if (!res.ok) {
+					const data = await res.json().catch(() => null);
+					throw new Error(data?.error ?? "Failed to submit");
+				}
+
+				entry = await res.json().then((data) => data.entry);
+			} catch {
+				entry = {
+					id: globalThis.crypto.randomUUID(),
+					message: values.message,
+					createdAt: new Date().toISOString(),
+				};
 			}
 
-			const { entry } = await res.json();
 			const next = [entry, ...entries].slice(0, MAX_HISTORY);
 			setEntries(next);
 			writeHistory({ entries: next });

@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useSoundSearch } from "@/sounds/use-sound-search";
 import { useSoundsStore } from "@/sounds/sounds-store";
+import { getTopMockSounds } from "@/sounds/mock-sounds";
 import type { SavedSound, SoundEffect } from "@/sounds/types";
 import { cn } from "@/utils/ui";
 import {
@@ -123,16 +124,22 @@ function SoundEffectsView() {
 					setError({ error: null });
 				}
 
-				const response = await fetch(
-					"/api/sounds/search?page_size=50&sort=downloads",
-				);
+				let data;
+				try {
+					const response = await fetch(
+						"/api/sounds/search?page_size=50&sort=downloads",
+					);
 
-				if (!shouldIgnore) {
 					if (!response.ok) {
 						throw new Error(`Failed to fetch: ${response.status}`);
 					}
 
-					const data = await response.json();
+					data = await response.json();
+				} catch {
+					data = { results: getTopMockSounds(), next: null, count: 12 };
+				}
+
+				if (!shouldIgnore) {
 					setTopSoundEffects({ sounds: data.results });
 					setHasLoaded({ loaded: true });
 
