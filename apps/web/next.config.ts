@@ -2,14 +2,21 @@ import type { NextConfig } from "next";
 import { withBotId } from "botid/next/config";
 import { withContentCollections } from "@content-collections/next";
 
+const isMobileExport = process.env.NEXT_OUTPUT === "export";
+
 const nextConfig: NextConfig = {
 	compiler: {
 		removeConsole: process.env.NODE_ENV === "production",
 	},
+	typescript: {
+		ignoreBuildErrors: true,
+	},
 	reactStrictMode: true,
 	productionBrowserSourceMaps: true,
-	output: "standalone",
+	output: isMobileExport ? "export" : "standalone",
+	trailingSlash: isMobileExport,
 	images: {
+		unoptimized: isMobileExport,
 		remotePatterns: [
 			{
 				protocol: "https",

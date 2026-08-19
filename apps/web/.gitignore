@@ -7,6 +7,9 @@
 
 .next/
 
+# Static export used by the Capacitor (mobile APK) build
+out/
+
 .font-cache/
 
 next-env.d.ts

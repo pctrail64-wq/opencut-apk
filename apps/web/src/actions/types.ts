@@ -42,3 +42,7 @@ export type TActionHandlerOptions =
 	| MutableRefObject<boolean>
 	| boolean
 	| undefined;
+
+export function isActionWithOptionalArgs(value: unknown): value is TActionWithOptionalArgs {
+	return typeof value === "string";
+}
